@@ -123,6 +123,29 @@ extension JSONSchema.Schema {
         guard containsNull, nonNullSchemas.count == 1 else { return nil }
         return nonNullSchemas[0]
     }
+
+    /// Returns the primitive or array schema that defines the generated type
+    /// when the other `allOf` members only refine that same JSON type.
+    var schemaDefiningAllOfType: JSONSchema? {
+        guard case .all(let schemas, _) = self, let first = schemas.first else { return nil }
+        guard
+            schemas.dropFirst()
+                .allSatisfy({ refinement in
+                    switch (first.value, refinement.value) {
+                    case (.boolean, .boolean), (.boolean, .fragment), (.number, .number), (.number, .fragment),
+                        (.integer, .integer), (.integer, .number), (.integer, .fragment), (.string, .string),
+                        (.string, .fragment), (.array, .fragment):
+                        return true
+                    case (.array, .array(_, let context)): return context.items == nil && context.prefixItems == nil
+                    default: return false
+                    }
+                })
+        else { return nil }
+        switch first.value {
+        case .boolean, .number, .integer, .string, .array: return first
+        default: return nil
+        }
+    }
 }
 
 extension JSONSchema {

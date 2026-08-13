@@ -149,6 +149,51 @@ final class Test_TypeMatcher: Test_Core {
         }
     }
 
+    func testTypedAllOfWithConstraintFragmentsUsesTheConcreteType() throws {
+        let schemas: [(JSONSchema, String)] = [
+            (
+                try loadSchemaFromYAML(
+                    """
+                    type: string
+                    allOf:
+                      - maxLength: 2000
+                    """
+                ), "Swift.String"
+            ),
+            (
+                try loadSchemaFromYAML(
+                    """
+                    anyOf:
+                      - type: integer
+                        allOf:
+                          - minimum: 13
+                      - type: 'null'
+                    """
+                ), "Swift.Int?"
+            ),
+            (
+                try loadSchemaFromYAML(
+                    """
+                    anyOf:
+                      - type: string
+                        allOf:
+                          - maxLength: 2000
+                      - type: 'null'
+                      - type: 'null'
+                    """
+                ), "Swift.String?"
+            ),
+        ]
+        for (schema, expectedTypeName) in schemas {
+            let typeUsage = try XCTUnwrap(
+                typeMatcher.tryMatchReferenceableType(for: schema, components: components),
+                "Expected typed allOf schema to be referenceable: \(schema.value)"
+            )
+            XCTAssertEqual(typeUsage.fullyQualifiedSwiftName, expectedTypeName)
+            XCTAssertTrue(typeMatcher.isReferenceable(schema))
+        }
+    }
+
     static let nonReferenceableTypes: [JSONSchema] = [
         // a soundness check – string enum
         .string(allowedValues: ["Foo"]),

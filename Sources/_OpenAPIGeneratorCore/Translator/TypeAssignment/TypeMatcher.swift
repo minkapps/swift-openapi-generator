@@ -75,6 +75,9 @@ struct TypeMatcher {
                     }
                     return try tryMatchReferenceableType(for: nonNullSchema, components: components)
                 }
+                if let definingSchema = schema.schemaDefiningAllOfType {
+                    return try tryMatchReferenceableType(for: definingSchema, components: components)
+                }
                 guard case let .reference(ref, _) = schema else { return nil }
                 return try TypeAssigner(context: context).typeName(for: ref).asUsage
             },
@@ -101,6 +104,7 @@ struct TypeMatcher {
             test: { schema in
                 if _tryMatchBuiltinNonRecursive(for: schema) != nil { return true }
                 if let nonNullSchema = schema.soleNonNullSchema { return isReferenceable(nonNullSchema) }
+                if let definingSchema = schema.schemaDefiningAllOfType { return isReferenceable(definingSchema) }
                 guard case .reference = schema else { return false }
                 return true
             },

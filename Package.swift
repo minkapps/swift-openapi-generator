@@ -37,7 +37,11 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.0"),
 
         // Read OpenAPI documents
-        .package(url: "https://github.com/mattpolzin/OpenAPIKit", from: "6.1.0", traits: []),
+        .package(
+            url: "https://github.com/minkapps/OpenAPIKit",
+            revision: "de90e4e42968d2e3b256eecb3982183e4b5ecdb0",
+            traits: []
+        ),
         .package(url: "https://github.com/jpsim/Yams", "4.0.0"..<"7.0.0"),
 
         // CLI Tool

@@ -106,6 +106,26 @@ class Test_TypeAssigner: Test_Core {
         }
     }
 
+    func testTypeUsageForNullableConstrainedProperty() throws {
+        let schema = try loadSchemaFromYAML(
+            """
+            anyOf:
+              - type: string
+                allOf:
+                  - maxLength: 2000
+              - type: 'null'
+              - type: 'null'
+            """
+        )
+        let usage = try typeAssigner.typeUsage(
+            forObjectPropertyNamed: "notes",
+            withSchema: schema,
+            components: .noComponents,
+            inParent: TypeName(swiftKeyPath: ["Request"])
+        )
+        XCTAssertEqual(usage.fullyQualifiedSwiftName, "Swift.String?")
+    }
+
     func testContentSwiftName() throws {
         let defensiveNameMaker = makeTranslator().context.safeNameGenerator.swiftContentTypeName
         let idiomaticNameMaker = makeTranslator(namingStrategy: .idiomatic).context.safeNameGenerator
