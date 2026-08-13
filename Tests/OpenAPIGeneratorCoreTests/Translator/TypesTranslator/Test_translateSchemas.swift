@@ -47,4 +47,32 @@ class Test_translateSchemas: Test_Core {
             XCTAssertEqual(collector.diagnostics.map(\.description), diagnosticDescriptions)
         }
     }
+
+    func testConstrainedInlineArrayTranslatesAsAnArray() throws {
+        let schema = try loadSchemaFromYAML(
+            """
+            type: array
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+            allOf:
+              - maxItems: 300
+            """
+        )
+        let declarations = try makeTranslator()
+            .translateSchema(
+                typeName: TypeName(swiftKeyPath: ["Components", "Schemas", "Items"]),
+                schema: schema,
+                overrides: .none
+            )
+        let renderer = TextBasedRenderer.default
+        declarations.forEach(renderer.renderDeclaration)
+        let rendered = renderer.renderedContents()
+
+        XCTAssertTrue(rendered.contains("internal struct ItemsPayload: Codable, Hashable, Sendable"))
+        XCTAssertTrue(rendered.contains("internal typealias Items = [Components.Schemas.ItemsPayload]"))
+        XCTAssertFalse(rendered.contains("value1"))
+    }
 }
