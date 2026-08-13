@@ -89,6 +89,8 @@ class Test_TypeAssigner: Test_Core {
         let expected: [(String, JSONSchema, String)] = [
             ("foo", .object(.init(), .init(properties: ["bar": .string])), "MyType.fooPayload"),
             ("foo", .object(.init(nullable: true), .init(properties: ["bar": .string])), "MyType.fooPayload?"),
+            ("foo", .any(of: [.reference(.component(named: "Foo")), .null()]), "Components.Schemas.Foo?"),
+            ("foo", .any(of: [.string, .null(), .null()]), "Swift.String?"),
         ]
         for (originalName, schema, typeNameString) in expected {
             try XCTAssertEqual(

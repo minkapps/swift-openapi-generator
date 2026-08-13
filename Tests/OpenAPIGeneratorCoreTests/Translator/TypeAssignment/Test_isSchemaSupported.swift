@@ -83,6 +83,10 @@ class Test_isSchemaSupported: XCTestCase {
             .object(properties: ["Foo": .string]), .reference(.component(named: "MyObj")), .string,
             .array(items: .string),
         ]),
+
+        // nullable schemas, including repeated and nested null branches
+        .any(of: [.reference(.component(named: "MyObj")), .null()]), .any(of: [.string, .null(), .null()]),
+        .any(of: [.any(of: [.string, .null()]), .null()]),
     ]
     func testSupportedTypes() throws {
         let translator = self.translator

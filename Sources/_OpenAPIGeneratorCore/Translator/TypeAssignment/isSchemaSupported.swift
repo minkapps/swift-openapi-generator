@@ -161,6 +161,9 @@ extension FileTranslator {
             return try areSchemasSupported(schemas, referenceStack: &referenceStack)
         case .any(of: let schemas, _):
             guard !schemas.isEmpty else { return .unsupported(reason: .noSubschemas, schema: schema) }
+            if let nonNullSchema = schema.soleNonNullSchema {
+                return try isSchemaSupported(nonNullSchema, referenceStack: &referenceStack)
+            }
             return try areSchemasSupported(schemas, referenceStack: &referenceStack)
         case .one(of: let schemas, let context):
             guard !schemas.isEmpty else { return .unsupported(reason: .noSubschemas, schema: schema) }

@@ -69,6 +69,12 @@ struct TypeMatcher {
             for: schema.value,
             test: { (schema) -> TypeUsage? in
                 if let builtinType = _tryMatchBuiltinNonRecursive(for: schema) { return builtinType }
+                if let nonNullSchema = schema.soleNonNullSchema {
+                    if case let .reference(reference, _) = nonNullSchema.value {
+                        return try TypeAssigner(context: context).typeName(for: reference).asUsage
+                    }
+                    return try tryMatchReferenceableType(for: nonNullSchema, components: components)
+                }
                 guard case let .reference(ref, _) = schema else { return nil }
                 return try TypeAssigner(context: context).typeName(for: ref).asUsage
             },
@@ -94,6 +100,7 @@ struct TypeMatcher {
             for: schema.value,
             test: { schema in
                 if _tryMatchBuiltinNonRecursive(for: schema) != nil { return true }
+                if let nonNullSchema = schema.soleNonNullSchema { return isReferenceable(nonNullSchema) }
                 guard case .reference = schema else { return false }
                 return true
             },
@@ -253,6 +260,7 @@ struct TypeMatcher {
     /// - Returns: `true` if the schema is optional, `false` otherwise.
     func isOptional(_ schema: JSONSchema, components: OpenAPI.Components) throws -> Bool {
         if schema.nullable || !schema.required { return true }
+        if schema.soleNonNullSchema != nil { return true }
         guard case .reference(let ref, _) = schema.value else { return false }
         let targetSchema = try components.assumeLookupOnce(ref)
         return try isOptional(targetSchema, components: components)

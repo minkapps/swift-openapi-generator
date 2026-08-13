@@ -103,10 +103,32 @@ extension JSONSchema.Schema {
         guard let schemaFormat else { return schemaName }
         return "\(schemaName) (\(schemaFormat))"
     }
+
+    /// Returns the sole non-null member of a nullable `anyOf`, including nested
+    /// and duplicate null branches, or `nil` when the union has another shape.
+    var soleNonNullSchema: JSONSchema? {
+        guard case .any(let schemas, _) = self else { return nil }
+
+        var containsNull = false
+        var nonNullSchemas: [JSONSchema] = []
+        func collect(_ schema: JSONSchema) {
+            switch schema.value {
+            case .null: containsNull = true
+            case .any(let nestedSchemas, _): nestedSchemas.forEach(collect)
+            default: nonNullSchemas.append(schema)
+            }
+        }
+        schemas.forEach(collect)
+
+        guard containsNull, nonNullSchemas.count == 1 else { return nil }
+        return nonNullSchemas[0]
+    }
 }
 
 extension JSONSchema {
 
     /// Returns a human-readable description of the schema.
     var prettyDescription: String { value.prettyDescription }
+
+    var soleNonNullSchema: JSONSchema? { value.soleNonNullSchema }
 }

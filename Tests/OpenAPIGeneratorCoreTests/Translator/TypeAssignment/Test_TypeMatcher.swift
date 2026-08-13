@@ -132,6 +132,23 @@ final class Test_TypeMatcher: Test_Core {
         }
     }
 
+    func testNullableSchemasAreReferenceableAndOptional() throws {
+        let schemas: [(JSONSchema, String)] = [
+            (.any(of: [.reference(.component(named: "Foo")), .null()]), "Components.Schemas.Foo?"),
+            (.any(of: [.string, .null()]), "Swift.String?"),
+            (.any(of: [.any(of: [.string, .null()]), .null()]), "Swift.String?"),
+        ]
+        for (schema, expectedTypeName) in schemas {
+            let typeUsage = try XCTUnwrap(
+                typeMatcher.tryMatchReferenceableType(for: schema, components: components),
+                "Expected nullable schema to be referenceable"
+            )
+            XCTAssertEqual(typeUsage.fullyQualifiedSwiftName, expectedTypeName)
+            XCTAssertTrue(typeMatcher.isReferenceable(schema))
+            XCTAssertTrue(try typeMatcher.isOptional(schema, components: components))
+        }
+    }
+
     static let nonReferenceableTypes: [JSONSchema] = [
         // a soundness check – string enum
         .string(allowedValues: ["Foo"]),
