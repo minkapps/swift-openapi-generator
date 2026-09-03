@@ -1603,6 +1603,53 @@ final class SnippetBasedReferenceTests: XCTestCase {
         )
     }
 
+    func testComponentsSchemasNullableInlineEnum() throws {
+        let translator = try makeTypesTranslator(
+            openAPIDocumentYAML: """
+                openapi: 3.1.0
+                info:
+                  title: Nullable enum
+                  version: 1.0.0
+                paths: {}
+                components:
+                  schemas:
+                    ProfileLanguage:
+                      type: object
+                      properties:
+                        proficiency:
+                          anyOf:
+                            - type: string
+                              enum:
+                                - learning
+                                - fluent
+                            - type: "null"
+                      required:
+                        - proficiency
+                """
+        )
+        let translation = try translator.translateSchemas(translator.components.schemas, multipartSchemaNames: [])
+        try XCTAssertSwiftEquivalent(
+            translation,
+            """
+            public enum Schemas {
+                public struct ProfileLanguage: Codable, Hashable, Sendable {
+                    @frozen public enum proficiencyPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                        case learning = "learning"
+                        case fluent = "fluent"
+                    }
+                    public var proficiency: Components.Schemas.ProfileLanguage.proficiencyPayload?
+                    public init(proficiency: Components.Schemas.ProfileLanguage.proficiencyPayload? = nil) {
+                        self.proficiency = proficiency
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case proficiency
+                    }
+                }
+            }
+            """
+        )
+    }
+
     func testComponentsSchemasDeprecatedObject() throws {
         try self.assertSchemasTranslation(
             """

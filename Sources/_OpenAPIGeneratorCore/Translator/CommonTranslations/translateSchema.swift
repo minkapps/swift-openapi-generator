@@ -123,6 +123,17 @@ extension TypesFileTranslator {
             return [typealiasDecl]
         }
 
+        if let nonNullSchema = value.soleNonNullSchema {
+            return try translateSchema(
+                typeName: typeName,
+                schema: nonNullSchema,
+                overrides: .init(
+                    isOptional: overrides.isOptional ?? typeMatcher.isOptional(schema, components: components),
+                    userDescription: overrides.userDescription ?? schema.description
+                )
+            )
+        }
+
         // Not a global schema, we have to actually define a type for it
         switch value {
         case let .object(coreContext, objectContext):
