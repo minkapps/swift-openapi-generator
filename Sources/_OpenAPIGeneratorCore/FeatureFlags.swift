@@ -26,8 +26,9 @@
 /// 0.2 is tagged. (This is for pre-1.0 versioning, would be 1.0 and 2.0 after
 /// 1.0 is released.)
 public enum FeatureFlag: String, Hashable, Codable, CaseIterable, Sendable {
-    // needs to be here for the enum to compile
-    case empty
+    /// Ignores additive object properties and preserves unknown open-union
+    /// response fragments for forward-compatible clients.
+    case forwardCompatibleDecoding
 }
 
 /// A set of enabled feature flags.

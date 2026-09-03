@@ -172,6 +172,21 @@ extension TypesFileTranslator {
             )
             return [allOfDecl]
         case let .any(of: schemas, core: coreContext):
+            if config.featureFlags.contains(.forwardCompatibleDecoding),
+                coreContext.vendorExtensions["x-mink-extensible-output-union"]?.value as? Bool == true,
+                schemas.count == 2, case let .one(knownSchemas, knownCore) = schemas[0].value,
+                let discriminator = knownCore.discriminator, schemas[1].isReference
+            {
+                return [
+                    try translateOneOf(
+                        typeName: typeName,
+                        openAPIDescription: overrides.userDescription ?? coreContext.description,
+                        discriminator: discriminator,
+                        schemas: knownSchemas,
+                        unknownSchema: schemas[1]
+                    )
+                ]
+            }
             let anyOfDecl = try translateAllOrAnyOf(
                 typeName: typeName,
                 openAPIDescription: overrides.userDescription ?? coreContext.description,
@@ -184,7 +199,8 @@ extension TypesFileTranslator {
                 typeName: typeName,
                 openAPIDescription: overrides.userDescription ?? coreContext.description,
                 discriminator: coreContext.discriminator,
-                schemas: schemas
+                schemas: schemas,
+                unknownSchema: nil
             )
             return [oneOfDecl]
         default: return []

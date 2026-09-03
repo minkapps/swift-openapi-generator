@@ -541,6 +541,34 @@ final class SnippetBasedReferenceTests: XCTestCase {
         )
     }
 
+    func testComponentsObjectNoAdditionalProperties_forwardCompatibleDecoding() throws {
+        try self.assertSchemasTranslation(
+            featureFlags: [.forwardCompatibleDecoding],
+            """
+            schemas:
+              MyObject:
+                type: object
+                properties:
+                  id:
+                    type: string
+                additionalProperties: false
+            """,
+            """
+            public enum Schemas {
+                public struct MyObject: Codable, Hashable, Sendable {
+                    public var id: Swift.String?
+                    public init(id: Swift.String? = nil) {
+                        self.id = id
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case id
+                    }
+                }
+            }
+            """
+        )
+    }
+
     func testComponentsObjectExplicitUntypedAdditionalProperties() throws {
         try self.assertSchemasTranslation(
             """
@@ -1198,6 +1226,134 @@ final class SnippetBasedReferenceTests: XCTestCase {
                     public func encode(to encoder: any Swift.Encoder) throws {
                         try self.value1?.encode(to: encoder)
                         try self.value2?.encode(to: encoder)
+                    }
+                }
+            }
+            """
+        )
+    }
+
+    func testComponentsSchemasOneOf_forwardCompatibleDiscriminator() throws {
+        try self.assertSchemasTranslation(
+            featureFlags: [.forwardCompatibleDecoding],
+            """
+            schemas:
+              FutureFragment:
+                type: object
+                properties:
+                  kind:
+                    type: string
+              A:
+                type: object
+                required: [kind, value]
+                properties:
+                  kind:
+                    type: string
+                  value:
+                    type: string
+                additionalProperties: false
+              B:
+                type: object
+                required: [kind, value]
+                properties:
+                  kind:
+                    type: string
+                  value:
+                    type: integer
+                additionalProperties: false
+              MyOpenOneOf:
+                x-mink-extensible-output-union: true
+                anyOf:
+                  - oneOf:
+                    - $ref: '#/components/schemas/A'
+                    - $ref: '#/components/schemas/B'
+                    discriminator:
+                      propertyName: kind
+                      mapping:
+                        a: '#/components/schemas/A'
+                        b: '#/components/schemas/B'
+                  - $ref: '#/components/schemas/FutureFragment'
+            """,
+            """
+            public enum Schemas {
+                public struct FutureFragment: Codable, Hashable, Sendable {
+                    public var kind: Swift.String?
+                    public init(kind: Swift.String? = nil) {
+                        self.kind = kind
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case kind
+                    }
+                }
+                public struct A: Codable, Hashable, Sendable {
+                    public var kind: Swift.String
+                    public var value: Swift.String
+                    public init(
+                        kind: Swift.String,
+                        value: Swift.String
+                    ) {
+                        self.kind = kind
+                        self.value = value
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case kind
+                        case value
+                    }
+                }
+                public struct B: Codable, Hashable, Sendable {
+                    public var kind: Swift.String
+                    public var value: Swift.Int
+                    public init(
+                        kind: Swift.String,
+                        value: Swift.Int
+                    ) {
+                        self.kind = kind
+                        self.value = value
+                    }
+                    public enum CodingKeys: String, CodingKey {
+                        case kind
+                        case value
+                    }
+                }
+                @frozen public enum MyOpenOneOf: Codable, Hashable, Sendable {
+                    case a(Components.Schemas.A)
+                    case b(Components.Schemas.B)
+                    case unknown(Components.Schemas.FutureFragment)
+                    public enum CodingKeys: String, CodingKey {
+                        case kind
+                    }
+                    public init(from decoder: any Swift.Decoder) throws {
+                        let container = try decoder.container(keyedBy: CodingKeys.self)
+                        let discriminator = try container.decodeIfPresent(
+                            Swift.String.self,
+                            forKey: .kind
+                        )
+                        switch discriminator {
+                        case "a":
+                            do {
+                                self = .a(try .init(from: decoder))
+                            } catch {
+                                self = .unknown(try .init(from: decoder))
+                            }
+                        case "b":
+                            do {
+                                self = .b(try .init(from: decoder))
+                            } catch {
+                                self = .unknown(try .init(from: decoder))
+                            }
+                        default:
+                            self = .unknown(try .init(from: decoder))
+                        }
+                    }
+                    public func encode(to encoder: any Swift.Encoder) throws {
+                        switch self {
+                        case let .a(value):
+                            try value.encode(to: encoder)
+                        case let .b(value):
+                            try value.encode(to: encoder)
+                        case let .unknown(value):
+                            try value.encode(to: encoder)
+                        }
                     }
                 }
             }

@@ -121,13 +121,15 @@ extension TypesFileTranslator {
     ///   document.
     ///   - discriminator: A discriminator specified in the OpenAPI document.
     ///   - schemas: The child schemas of the oneOf.
+    ///   - unknownSchema: An optional schema that safely captures unknown or malformed variants.
     /// - Throws: An error if there is an issue during translation.
     /// - Returns: A declaration representing the translated oneOf structure.
     func translateOneOf(
         typeName: TypeName,
         openAPIDescription: String?,
         discriminator: OpenAPI.Discriminator?,
-        schemas: [JSONSchema]
+        schemas: [JSONSchema],
+        unknownSchema: JSONSchema? = nil
     ) throws -> Declaration {
         let cases: [(String, [String]?, Bool, Comment?, TypeUsage, [Declaration])]
         if let discriminator {
@@ -138,7 +140,8 @@ extension TypesFileTranslator {
                 return ref
             }
             let mappedTypes = try discriminator.allTypes(schemas: includedSchemas, typeAssigner: typeAssigner)
-            cases = mappedTypes.map { mappedType in
+            var discriminatedCases: [(String, [String]?, Bool, Comment?, TypeUsage, [Declaration])] = mappedTypes.map {
+                mappedType in
                 let comment: Comment? = .child(
                     originalName: mappedType.typeName.shortSwiftName,
                     userDescription: nil,
@@ -147,6 +150,28 @@ extension TypesFileTranslator {
                 let caseName = safeSwiftNameForOneOfMappedCase(mappedType)
                 return (caseName, mappedType.rawNames, true, comment, mappedType.typeName.asUsage, [])
             }
+            if let unknownSchema {
+                let childType = try typeAssigner.typeUsage(
+                    forAllOrAnyOrOneOfChildSchemaNamed: "unknown",
+                    withSchema: unknownSchema,
+                    components: components,
+                    inParent: typeName
+                )
+                var referenceStack = ReferenceStack.empty
+                let isKeyValuePair = try typeMatcher.isKeyValuePair(
+                    unknownSchema,
+                    referenceStack: &referenceStack,
+                    components: components
+                )
+                discriminatedCases.append(
+                    (
+                        "unknown", nil, isKeyValuePair,
+                        .child(originalName: "unknown", userDescription: unknownSchema.description, parent: typeName),
+                        childType, []
+                    )
+                )
+            }
+            cases = discriminatedCases
         } else {
             cases = try schemas.enumerated()
                 .map { index, schema in
@@ -225,7 +250,8 @@ extension TypesFileTranslator {
             ]
             decoder = translateOneOfWithDiscriminatorDecoder(
                 discriminatorName: swiftName,
-                cases: cases.map { ($0.0, $0.1!) }
+                cases: cases.compactMap { info in info.1.map { (info.0, $0) } },
+                unknownCase: cases.first { $0.1 == nil }?.0
             )
         } else {
             codingKeysDecls = []

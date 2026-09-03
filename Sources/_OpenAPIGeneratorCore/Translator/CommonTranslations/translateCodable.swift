@@ -35,6 +35,7 @@ extension FileTranslator {
         switch strategy {
         case .synthesized: return nil
         case .enforcingNoAdditionalProperties:
+            if config.featureFlags.contains(.forwardCompatibleDecoding) { return nil }
             return translateStructBlueprintCustomDecoder(
                 properties: properties,
                 trailingCodeBlocks: [
@@ -314,27 +315,37 @@ extension FileTranslator {
     ///   - discriminatorName: The name of the discriminator property used for case selection.
     ///   - cases: The cases to decode, first element is the raw string to check for, the second
     ///     element is the case name (without the leading dot).
+    ///   - unknownCase: The case that captures unknown or malformed variants, when present.
     /// - Returns: A `Declaration` representing the `oneOf` decoder implementation.
     func translateOneOfWithDiscriminatorDecoder(
         discriminatorName: String,
-        cases: [(caseName: String, rawNames: [String])]
+        cases: [(caseName: String, rawNames: [String])],
+        unknownCase: String? = nil
     ) -> Declaration {
-        let cases: [SwitchCaseDescription] = cases.map { caseName, rawNames in
-            .init(
-                kind: .multiCase(rawNames.map { .literal($0) }),
-                body: [
-                    .expression(
-                        .assignment(
-                            left: .identifierPattern("self"),
-                            right: .dot(caseName).call([.init(label: nil, expression: .try(.initFromDecoderExpr()))])
-                        )
-                    )
-                ]
+        let unknownAssignment = unknownCase.map { caseName in
+            CodeBlock.expression(
+                .assignment(
+                    left: .identifierPattern("self"),
+                    right: .dot(caseName).call([.init(label: nil, expression: .try(.initFromDecoderExpr()))])
+                )
             )
         }
-        let otherExprs: [CodeBlock] = [
-            .expression(translateOneOfDecoderThrowOnUnknownExpr(discriminatorSwiftName: discriminatorName))
-        ]
+        let cases: [SwitchCaseDescription] = cases.map { caseName, rawNames in
+            let assignment = CodeBlock.expression(
+                .assignment(
+                    left: .identifierPattern("self"),
+                    right: .dot(caseName).call([.init(label: nil, expression: .try(.initFromDecoderExpr()))])
+                )
+            )
+            return .init(
+                kind: .multiCase(rawNames.map { .literal($0) }),
+                body: unknownAssignment.map { [.expression(.do([assignment], catchBody: [$0]))] } ?? [assignment]
+            )
+        }
+        let otherExprs: [CodeBlock] =
+            unknownAssignment.map { [$0] } ?? [
+                .expression(translateOneOfDecoderThrowOnUnknownExpr(discriminatorSwiftName: discriminatorName))
+            ]
         let body: [CodeBlock] = [
             .declaration(.decoderContainerOfKeysVar()),
             .declaration(
@@ -342,7 +353,7 @@ extension FileTranslator {
                     kind: .let,
                     left: Constants.OneOf.discriminatorName,
                     right: .try(
-                        .identifierPattern("container").dot("decode")
+                        .identifierPattern("container").dot(unknownCase == nil ? "decode" : "decodeIfPresent")
                             .call([
                                 .init(label: nil, expression: .identifierType(TypeName.string).dot("self")),
                                 .init(label: "forKey", expression: .dot(discriminatorName)),
