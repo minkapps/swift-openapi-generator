@@ -175,7 +175,7 @@ extension TypesFileTranslator {
             if config.featureFlags.contains(.forwardCompatibleDecoding),
                 coreContext.vendorExtensions["x-mink-extensible-output-union"]?.value as? Bool == true,
                 schemas.count == 2, case let .one(knownSchemas, knownCore) = schemas[0].value,
-                let discriminator = knownCore.discriminator, schemas[1].isReference
+                let discriminator = knownCore.discriminator
             {
                 return [
                     try translateOneOf(

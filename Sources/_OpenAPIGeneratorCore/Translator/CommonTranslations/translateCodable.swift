@@ -346,19 +346,18 @@ extension FileTranslator {
             unknownAssignment.map { [$0] } ?? [
                 .expression(translateOneOfDecoderThrowOnUnknownExpr(discriminatorSwiftName: discriminatorName))
             ]
+        let decodeDiscriminator = Expression.identifierPattern("container").dot("decode")
+            .call([
+                .init(label: nil, expression: .identifierType(TypeName.string).dot("self")),
+                .init(label: "forKey", expression: .dot(discriminatorName)),
+            ])
         let body: [CodeBlock] = [
             .declaration(.decoderContainerOfKeysVar()),
             .declaration(
                 .variable(
                     kind: .let,
                     left: Constants.OneOf.discriminatorName,
-                    right: .try(
-                        .identifierPattern("container").dot(unknownCase == nil ? "decode" : "decodeIfPresent")
-                            .call([
-                                .init(label: nil, expression: .identifierType(TypeName.string).dot("self")),
-                                .init(label: "forKey", expression: .dot(discriminatorName)),
-                            ])
-                    )
+                    right: unknownCase == nil ? .try(decodeDiscriminator) : .optionalTry(decodeDiscriminator)
                 )
             ),
             .expression(

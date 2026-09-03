@@ -163,11 +163,21 @@ extension TypesFileTranslator {
                     referenceStack: &referenceStack,
                     components: components
                 )
+                let associatedDeclarations: [Declaration]
+                if typeMatcher.isInlinable(unknownSchema) {
+                    associatedDeclarations = try translateSchema(
+                        typeName: childType.typeName,
+                        schema: unknownSchema,
+                        overrides: .none
+                    )
+                } else {
+                    associatedDeclarations = []
+                }
                 discriminatedCases.append(
                     (
                         "unknown", nil, isKeyValuePair,
                         .child(originalName: "unknown", userDescription: unknownSchema.description, parent: typeName),
-                        childType, []
+                        childType, associatedDeclarations
                     )
                 )
             }

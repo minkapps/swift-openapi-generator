@@ -1238,11 +1238,6 @@ final class SnippetBasedReferenceTests: XCTestCase {
             featureFlags: [.forwardCompatibleDecoding],
             """
             schemas:
-              FutureFragment:
-                type: object
-                properties:
-                  kind:
-                    type: string
               A:
                 type: object
                 required: [kind, value]
@@ -1272,19 +1267,11 @@ final class SnippetBasedReferenceTests: XCTestCase {
                       mapping:
                         a: '#/components/schemas/A'
                         b: '#/components/schemas/B'
-                  - $ref: '#/components/schemas/FutureFragment'
+                  - type: object
+                    additionalProperties: true
             """,
             """
             public enum Schemas {
-                public struct FutureFragment: Codable, Hashable, Sendable {
-                    public var kind: Swift.String?
-                    public init(kind: Swift.String? = nil) {
-                        self.kind = kind
-                    }
-                    public enum CodingKeys: String, CodingKey {
-                        case kind
-                    }
-                }
                 public struct A: Codable, Hashable, Sendable {
                     public var kind: Swift.String
                     public var value: Swift.String
@@ -1318,13 +1305,25 @@ final class SnippetBasedReferenceTests: XCTestCase {
                 @frozen public enum MyOpenOneOf: Codable, Hashable, Sendable {
                     case a(Components.Schemas.A)
                     case b(Components.Schemas.B)
-                    case unknown(Components.Schemas.FutureFragment)
+                    public struct UnknownPayload: Codable, Hashable, Sendable {
+                        public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                        public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                            self.additionalProperties = additionalProperties
+                        }
+                        public init(from decoder: any Swift.Decoder) throws {
+                            additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                        }
+                        public func encode(to encoder: any Swift.Encoder) throws {
+                            try encoder.encodeAdditionalProperties(additionalProperties)
+                        }
+                    }
+                    case unknown(Components.Schemas.MyOpenOneOf.UnknownPayload)
                     public enum CodingKeys: String, CodingKey {
                         case kind
                     }
                     public init(from decoder: any Swift.Decoder) throws {
                         let container = try decoder.container(keyedBy: CodingKeys.self)
-                        let discriminator = try container.decodeIfPresent(
+                        let discriminator = try? container.decode(
                             Swift.String.self,
                             forKey: .kind
                         )
