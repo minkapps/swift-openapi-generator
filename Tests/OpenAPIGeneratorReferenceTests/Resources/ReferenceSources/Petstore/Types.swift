@@ -441,31 +441,7 @@ public enum Components {
             }
         }
         /// - Remark: Generated from `#/components/schemas/MixedAllOfPrimitive`.
-        public struct MixedAllOfPrimitive: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/MixedAllOfPrimitive/value1`.
-            public var value1: Foundation.Date
-            /// - Remark: Generated from `#/components/schemas/MixedAllOfPrimitive/value2`.
-            public var value2: Swift.String
-            /// Creates a new `MixedAllOfPrimitive`.
-            ///
-            /// - Parameters:
-            ///   - value1:
-            ///   - value2:
-            public init(
-                value1: Foundation.Date,
-                value2: Swift.String
-            ) {
-                self.value1 = value1
-                self.value2 = value2
-            }
-            public init(from decoder: any Swift.Decoder) throws {
-                self.value1 = try decoder.decodeFromSingleValueContainer()
-                self.value2 = try decoder.decodeFromSingleValueContainer()
-            }
-            public func encode(to encoder: any Swift.Encoder) throws {
-                try encoder.encodeToSingleValueContainer(self.value1)
-            }
-        }
+        public typealias MixedAllOfPrimitive = Foundation.Date
         /// Kind of pet
         ///
         /// - Remark: Generated from `#/components/schemas/PetKind`.

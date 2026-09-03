@@ -117,10 +117,7 @@ final class Test_Types: XCTestCase {
             expectedJSON: #"{"id":1,"name":"Fluffz"}"#
         )
         try testJSON(
-            Components.Schemas.MixedAllOfPrimitive(
-                value1: Date(timeIntervalSince1970: 1_674_036_251),
-                value2: #"2023-01-18T10:04:11Z"#
-            ),
+            Components.Schemas.MixedAllOfPrimitive(timeIntervalSince1970: 1_674_036_251),
             expectedJSON: #""2023-01-18T10:04:11Z""#
         )
     }
