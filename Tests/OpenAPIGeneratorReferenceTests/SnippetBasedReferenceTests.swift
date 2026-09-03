@@ -1131,6 +1131,7 @@ final class SnippetBasedReferenceTests: XCTestCase {
         try self.assertSchemasTranslation(
             """
             schemas:
+              FutureFragment: {}
               A:
                 type: object
                 additionalProperties: false
@@ -1140,10 +1141,11 @@ final class SnippetBasedReferenceTests: XCTestCase {
                     - type: string
                     - type: integer
                     - $ref: '#/components/schemas/A'
-                  - {}
+                  - $ref: '#/components/schemas/FutureFragment'
             """,
             """
             public enum Schemas {
+                public typealias FutureFragment = OpenAPIRuntime.OpenAPIValueContainer
                 public struct A: Codable, Hashable, Sendable {
                     public init() {}
                     public init(from decoder: any Swift.Decoder) throws {
@@ -1193,10 +1195,10 @@ final class SnippetBasedReferenceTests: XCTestCase {
                         }
                     }
                     public var value1: Components.Schemas.MyOpenOneOf.Value1Payload?
-                    public var value2: OpenAPIRuntime.OpenAPIValueContainer?
+                    public var value2: Components.Schemas.FutureFragment?
                     public init(
                         value1: Components.Schemas.MyOpenOneOf.Value1Payload? = nil,
-                        value2: OpenAPIRuntime.OpenAPIValueContainer? = nil
+                        value2: Components.Schemas.FutureFragment? = nil
                     ) {
                         self.value1 = value1
                         self.value2 = value2
@@ -1267,8 +1269,7 @@ final class SnippetBasedReferenceTests: XCTestCase {
                       mapping:
                         a: '#/components/schemas/A'
                         b: '#/components/schemas/B'
-                  - type: object
-                    additionalProperties: true
+                  - {}
             """,
             """
             public enum Schemas {
@@ -1305,19 +1306,7 @@ final class SnippetBasedReferenceTests: XCTestCase {
                 @frozen public enum MyOpenOneOf: Codable, Hashable, Sendable {
                     case a(Components.Schemas.A)
                     case b(Components.Schemas.B)
-                    public struct UnknownPayload: Codable, Hashable, Sendable {
-                        public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
-                        public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
-                            self.additionalProperties = additionalProperties
-                        }
-                        public init(from decoder: any Swift.Decoder) throws {
-                            additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
-                        }
-                        public func encode(to encoder: any Swift.Encoder) throws {
-                            try encoder.encodeAdditionalProperties(additionalProperties)
-                        }
-                    }
-                    case unknown(Components.Schemas.MyOpenOneOf.UnknownPayload)
+                    case unknown(OpenAPIRuntime.OpenAPIValueContainer)
                     public enum CodingKeys: String, CodingKey {
                         case kind
                     }
