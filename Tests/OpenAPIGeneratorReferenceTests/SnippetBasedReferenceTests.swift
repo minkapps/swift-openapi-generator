@@ -410,15 +410,15 @@ final class SnippetBasedReferenceTests: XCTestCase {
                         fooOptional: Swift.String? = nil,
                         fooRequired: Swift.String,
                         fooOptionalNullable: Swift.String? = nil,
-                        fooRequiredNullable: Swift.String? = nil,
+                        fooRequiredNullable: Swift.String?,
                         fooOptionalArray: [Swift.String]? = nil,
                         fooRequiredArray: [Swift.String],
                         fooOptionalNullableArray: [Swift.String]? = nil,
-                        fooRequiredNullableArray: [Swift.String]? = nil,
+                        fooRequiredNullableArray: [Swift.String]?,
                         fooOptionalArrayOfNullableItems: [Swift.String?]? = nil,
                         fooRequiredArrayOfNullableItems: [Swift.String?],
                         fooOptionalNullableArrayOfNullableItems: [Swift.String?]? = nil,
-                        fooRequiredNullableArrayOfNullableItems: [Swift.String?]? = nil
+                        fooRequiredNullableArrayOfNullableItems: [Swift.String?]?
                     ) {
                         self.fooOptional = fooOptional
                         self.fooRequired = fooRequired
@@ -446,6 +446,108 @@ final class SnippetBasedReferenceTests: XCTestCase {
                         case fooRequiredArrayOfNullableItems
                         case fooOptionalNullableArrayOfNullableItems
                         case fooRequiredNullableArrayOfNullableItems
+                    }
+                    public init(from decoder: any Swift.Decoder) throws {
+                        let container = try decoder.container(keyedBy: CodingKeys.self)
+                        self.fooOptional = try container.decodeIfPresent(
+                            Swift.String.self,
+                            forKey: .fooOptional
+                        )
+                        self.fooRequired = try container.decode(
+                            Swift.String.self,
+                            forKey: .fooRequired
+                        )
+                        self.fooOptionalNullable = try container.decodeIfPresent(
+                            Swift.String.self,
+                            forKey: .fooOptionalNullable
+                        )
+                        self.fooRequiredNullable = try container.decode(
+                            Swift.String?.self,
+                            forKey: .fooRequiredNullable
+                        )
+                        self.fooOptionalArray = try container.decodeIfPresent(
+                            [Swift.String].self,
+                            forKey: .fooOptionalArray
+                        )
+                        self.fooRequiredArray = try container.decode(
+                            [Swift.String].self,
+                            forKey: .fooRequiredArray
+                        )
+                        self.fooOptionalNullableArray = try container.decodeIfPresent(
+                            [Swift.String].self,
+                            forKey: .fooOptionalNullableArray
+                        )
+                        self.fooRequiredNullableArray = try container.decode(
+                            [Swift.String]?.self,
+                            forKey: .fooRequiredNullableArray
+                        )
+                        self.fooOptionalArrayOfNullableItems = try container.decodeIfPresent(
+                            [Swift.String?].self,
+                            forKey: .fooOptionalArrayOfNullableItems
+                        )
+                        self.fooRequiredArrayOfNullableItems = try container.decode(
+                            [Swift.String?].self,
+                            forKey: .fooRequiredArrayOfNullableItems
+                        )
+                        self.fooOptionalNullableArrayOfNullableItems = try container.decodeIfPresent(
+                            [Swift.String?].self,
+                            forKey: .fooOptionalNullableArrayOfNullableItems
+                        )
+                        self.fooRequiredNullableArrayOfNullableItems = try container.decode(
+                            [Swift.String?]?.self,
+                            forKey: .fooRequiredNullableArrayOfNullableItems
+                        )
+                    }
+                    public func encode(to encoder: any Swift.Encoder) throws {
+                        var container = encoder.container(keyedBy: CodingKeys.self)
+                        try container.encodeIfPresent(
+                            self.fooOptional,
+                            forKey: .fooOptional
+                        )
+                        try container.encode(
+                            self.fooRequired,
+                            forKey: .fooRequired
+                        )
+                        try container.encodeIfPresent(
+                            self.fooOptionalNullable,
+                            forKey: .fooOptionalNullable
+                        )
+                        try container.encode(
+                            self.fooRequiredNullable,
+                            forKey: .fooRequiredNullable
+                        )
+                        try container.encodeIfPresent(
+                            self.fooOptionalArray,
+                            forKey: .fooOptionalArray
+                        )
+                        try container.encode(
+                            self.fooRequiredArray,
+                            forKey: .fooRequiredArray
+                        )
+                        try container.encodeIfPresent(
+                            self.fooOptionalNullableArray,
+                            forKey: .fooOptionalNullableArray
+                        )
+                        try container.encode(
+                            self.fooRequiredNullableArray,
+                            forKey: .fooRequiredNullableArray
+                        )
+                        try container.encodeIfPresent(
+                            self.fooOptionalArrayOfNullableItems,
+                            forKey: .fooOptionalArrayOfNullableItems
+                        )
+                        try container.encode(
+                            self.fooRequiredArrayOfNullableItems,
+                            forKey: .fooRequiredArrayOfNullableItems
+                        )
+                        try container.encodeIfPresent(
+                            self.fooOptionalNullableArrayOfNullableItems,
+                            forKey: .fooOptionalNullableArrayOfNullableItems
+                        )
+                        try container.encode(
+                            self.fooRequiredNullableArrayOfNullableItems,
+                            forKey: .fooRequiredNullableArrayOfNullableItems
+                        )
                     }
                 }
             }

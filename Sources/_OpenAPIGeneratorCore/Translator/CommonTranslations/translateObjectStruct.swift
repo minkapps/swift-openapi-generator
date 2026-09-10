@@ -99,6 +99,7 @@ extension TypesFileTranslator {
                     isDeprecated: value.deprecated,
                     originalName: key,
                     typeUsage: propertyType,
+                    isRequiredNullable: value.required && propertyType.isOptional,
                     associatedDeclarations: associatedDeclarations,
                     context: context
                 )

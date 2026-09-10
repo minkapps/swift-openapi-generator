@@ -131,6 +131,12 @@ struct PropertyBlueprint {
     /// The type usage of the property.
     var typeUsage: TypeUsage
 
+    /// Whether the property is required by its parent object while its schema accepts null.
+    ///
+    /// Swift represents the value as an Optional, but Codable must still distinguish a missing
+    /// key from a present null value.
+    var isRequiredNullable: Bool = false
+
     /// A default value for the property.
     var `default`: DefaultValue? = nil
 
@@ -166,6 +172,7 @@ extension PropertyBlueprint {
     /// Nil if the property is required.
     var defaultValue: DefaultValue? {
         if let explicitDefaultValue = `default` { return explicitDefaultValue }
+        if isRequiredNullable { return nil }
         guard typeUsage.isOptional else { return nil }
         return .nil
     }

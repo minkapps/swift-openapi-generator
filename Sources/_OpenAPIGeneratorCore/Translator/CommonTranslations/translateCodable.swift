@@ -27,15 +27,20 @@ extension FileTranslator {
         strategy: StructBlueprint.OpenAPICodableStrategy,
         properties: [PropertyBlueprint]
     ) -> Declaration? {
+        let requiresPresenceAwareDecoding = properties.contains(where: \.isRequiredNullable)
         let knownKeys = properties.map(\.originalName)
         let knownKeysFunctionArg = FunctionArgumentDescription(
             label: "knownKeys",
             expression: .literal(.array(knownKeys.map { .literal($0) }))
         )
         switch strategy {
-        case .synthesized: return nil
+        case .synthesized:
+            return requiresPresenceAwareDecoding ? translateStructBlueprintCustomDecoder(properties: properties) : nil
         case .enforcingNoAdditionalProperties:
-            if config.featureFlags.contains(.forwardCompatibleDecoding) { return nil }
+            if config.featureFlags.contains(.forwardCompatibleDecoding) {
+                return requiresPresenceAwareDecoding
+                    ? translateStructBlueprintCustomDecoder(properties: properties) : nil
+            }
             return translateStructBlueprintCustomDecoder(
                 properties: properties,
                 trailingCodeBlocks: [
@@ -79,7 +84,9 @@ extension FileTranslator {
         properties: [PropertyBlueprint]
     ) -> Declaration? {
         switch strategy {
-        case .synthesized, .enforcingNoAdditionalProperties: return nil
+        case .synthesized, .enforcingNoAdditionalProperties:
+            return properties.contains(where: \.isRequiredNullable)
+                ? translateStructBlueprintCustomEncoder(properties: properties) : nil
         case .allowingAdditionalProperties:
             return translateStructBlueprintCustomEncoder(
                 properties: properties,
@@ -118,12 +125,18 @@ extension FileTranslator {
         let containerVarDecl: Declaration = .decoderContainerOfKeysVar()
         let assignExprs: [Expression] = properties.map { property in
             let typeUsage = property.typeUsage
+            let decodeIfPresent = typeUsage.isOptional && !property.isRequiredNullable
             return .assignment(
                 left: .selfDot(property.swiftSafeName),
                 right: .try(
-                    .identifierPattern("container").dot("decode\(typeUsage.isOptional ? "IfPresent" : "")")
+                    .identifierPattern("container").dot("decode\(decodeIfPresent ? "IfPresent" : "")")
                         .call([
-                            .init(label: nil, expression: .identifierType(typeUsage.withOptional(false)).dot("self")),
+                            .init(
+                                label: nil,
+                                expression: .identifierType(
+                                    property.isRequiredNullable ? typeUsage : typeUsage.withOptional(false)
+                                ).dot("self")
+                            ),
                             .init(label: "forKey", expression: .dot(property.swiftSafeName)),
                         ])
                 )
@@ -155,7 +168,9 @@ extension FileTranslator {
         )
         let encodeExprs: [Expression] = properties.map { property in
             .try(
-                .identifierPattern("container").dot("encode\(property.typeUsage.isOptional ? "IfPresent" : "")")
+                .identifierPattern("container").dot(
+                    "encode\(property.typeUsage.isOptional && !property.isRequiredNullable ? "IfPresent" : "")"
+                )
                     .call([
                         .init(label: nil, expression: .selfDot(property.swiftSafeName)),
                         .init(label: "forKey", expression: .dot(property.swiftSafeName)),

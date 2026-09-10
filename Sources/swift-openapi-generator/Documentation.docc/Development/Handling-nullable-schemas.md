@@ -14,7 +14,7 @@ This document describes the rules used to decide which generated Swift types and
 
 [OpenAPI 3.0.3](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.3.md) uses JSON Schema [Draft 5](https://json-schema.org/specification-links.html#draft-5), while [OpenAPI 3.1.0](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md) uses JSON Schema [2020-12](https://json-schema.org/specification-links.html#2020-12). There are a few differences that we call out below, but it's important to be aware of the fact that the generator needs to handle both.
 
-The generator uses a simple rule: if any of the places that hint at optionality mark a field as optional, the value is generated as optional. It can be thought of as an `OR` operator.
+The generator uses an optional Swift value whenever a schema accepts null or a property can be omitted. For object properties, generated Codable code preserves the independent required-key rule even when the Swift value is optional.
 
 ### Standalone schemas
 
@@ -64,7 +64,7 @@ MyPerson:
 
 Notice that the `required` array only contains `name`, but not `age`. In objects, a property being omitted from the `required` array also signals to the generator that the property should be treated as an optional.
 
-Marking the schema itself as nullable _as well_ doesn't make a difference, it will still be treated as a single-wrapped optional. Same if the property is included in the `required` array but marked as `nullable`, it will be an optional.
+Marking the schema itself as nullable _as well_ still produces a single-wrapped optional. When the property is included in the `required` array, the generated initializer requires an argument and generated Codable code encodes nil as an explicit null and rejects a missing key.
 
 That means the following alternative definition results in the same generated Swift code as the above.
 
@@ -81,7 +81,7 @@ MyPerson:
     - age # even though required, the nullability of the schema "wins"
 ```
 
-> The rule can be summarized as: `property is optional := schema is nullable OR property is not required`.
+> The Swift type rule is `property value is Optional := schema is nullable OR property is not required`. Required-key presence remains a separate Codable rule.
 
 ### Schemas in parameters
 
