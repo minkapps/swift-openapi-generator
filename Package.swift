@@ -39,7 +39,7 @@ let package = Package(
         // Read OpenAPI documents
         .package(
             url: "https://github.com/minkapps/OpenAPIKit",
-            revision: "de90e4e42968d2e3b256eecb3982183e4b5ecdb0",
+            revision: "ffffaff5593085a05d5a339e200d0c1dbc70ecea",
             traits: []
         ),
         .package(url: "https://github.com/jpsim/Yams", "4.0.0"..<"7.0.0"),
